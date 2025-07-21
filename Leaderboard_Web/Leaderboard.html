@@ -75,9 +75,10 @@
   </div>
 
 <script>
-// ✅ Your deployed contract on BlockDAG Testnet
-const contractAddress = "0xd89538fc30ce658e43225f90a39629dcdccc587f";
+console.log("Page loaded. Checking Ethereum provider...");
 
+// ✅ Replace with your deployed contract
+const contractAddress = "0xd89538fc30ce658e43225f90a39629dcdccc587f";
 const contractABI = [
   {
     "anonymous": false,
@@ -152,36 +153,62 @@ const contractABI = [
 
 let provider, signer, contract;
 
-// ✅ Connect wallet
+// ✅ Improved MetaMask connection with mobile fallback
 async function connectWallet() {
-  if (!window.ethereum) return alert("Install MetaMask!");
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  signer = provider.getSigner();
-  const addr = await signer.getAddress();
-  document.getElementById("wallet").innerText = "✅ Connected: " + addr;
-  contract = new ethers.Contract(contractAddress, contractABI, signer);
+  console.log("Connect button clicked.");
+
+  if (!window.ethereum) {
+    if (/Mobi|Android|iPhone/i.test(navigator.userAgent)) {
+      alert("📱 On mobile, please open this page INSIDE MetaMask's in-app browser to connect your wallet.");
+    } else {
+      alert("💻 MetaMask not detected! Please install the MetaMask browser extension.");
+    }
+    return;
+  }
+
+  try {
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    signer = provider.getSigner();
+    const addr = await signer.getAddress();
+    console.log("Wallet connected:", addr);
+    document.getElementById("wallet").innerText = "✅ Connected: " + addr;
+    contract = new ethers.Contract(contractAddress, contractABI, signer);
+  } catch (err) {
+    console.error("MetaMask connection failed:", err);
+    alert("❌ Wallet connection failed! Check console for details.");
+  }
 }
 
-// ✅ Submit a test score (replace 123 with actual game score)
+// ✅ Submit score
 async function submitScore() {
-  if (!contract) return alert("Connect wallet first!");
-  const scoreValue = prompt("Enter your score:", "123");
-  if (!scoreValue) return;
-  const tx = await contract.submitScore(parseInt(scoreValue));
-  alert("Submitted! Tx Hash: " + tx.hash);
+  if (!contract) return alert("⚠️ Connect wallet first!");
+  try {
+    const tx = await contract.submitScore(123); // Example score
+    console.log("Submitting score TX:", tx.hash);
+    alert("Submitted! Tx Hash: " + tx.hash);
+  } catch (err) {
+    console.error("Score submission failed:", err);
+    alert("❌ Could not submit score. Check console for details.");
+  }
 }
 
 // ✅ Load leaderboard
 async function loadLeaderboard() {
-  if (!contract) return alert("Connect wallet first!");
-  const count = await contract.getScoreCount();
-  let html = "<h2>Leaderboard</h2>";
-  for (let i = 0; i < count; i++) {
-    const entry = await contract.getScore(i);
-    html += `<div class="entry">${entry.player.slice(0,6)}... - <b>${entry.value}</b></div>`;
+  if (!contract) return alert("⚠️ Connect wallet first!");
+  try {
+    const count = await contract.getScoreCount();
+    console.log("Leaderboard count:", count.toString());
+    let html = "<h2>Leaderboard</h2>";
+    for (let i = 0; i < count; i++) {
+      const entry = await contract.getScore(i);
+      html += `<div class="entry">${entry.player.slice(0,6)}... - <b>${entry.value}</b></div>`;
+    }
+    document.getElementById("leaderboard").innerHTML = html;
+  } catch (err) {
+    console.error("Leaderboard load failed:", err);
+    alert("❌ Failed to load leaderboard. Check console.");
   }
-  document.getElementById("leaderboard").innerHTML = html;
 }
 </script>
 </body>
