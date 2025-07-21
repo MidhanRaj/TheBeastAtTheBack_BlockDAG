@@ -87,10 +87,10 @@
     <p>No scores yet...</p>
   </div>
 
-  <!-- ✅ CSP-safe ethers.js ESM -->
-  <script type="module">
-    import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js";
+  <!-- ✅ Load self-hosted ethers.js -->
+  <script src="ethers.min.js"></script>
 
+  <script>
     // ✅ Contract details
     const contractAddress = "0x7b41e89fd20bec81adbaad81c7e0ee2bd409f402";
     const contractABI = [
@@ -145,7 +145,7 @@
     }
 
     // ✅ Connect wallet
-    window.connectWallet = async function() {
+    async function connectWallet() {
       console.log("🖱 Connect button clicked.");
       if (!window.ethereum) {
         alert("MetaMask not detected! Please install it.");
@@ -153,8 +153,9 @@
       }
       try {
         console.log("🔗 Requesting wallet connection...");
-        provider = new ethers.BrowserProvider(window.ethereum);
-        signer = await provider.getSigner();
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
         currentWallet = await signer.getAddress();
 
         document.getElementById("wallet").innerText = `✅ Connected: ${currentWallet}`;
@@ -162,10 +163,10 @@
       } catch (err) {
         console.error("❌ MetaMask connection failed!", err);
       }
-    };
+    }
 
     // ✅ Submit score (with username)
-    window.submitScore = async function() {
+    async function submitScore() {
       if (!contract) return alert("Connect your wallet first!");
 
       const username = document.getElementById("usernameInput").value.trim();
@@ -185,10 +186,10 @@
       } catch (err) {
         console.error("❌ Submit failed!", err);
       }
-    };
+    }
 
     // ✅ Load leaderboard
-    window.loadLeaderboard = async function() {
+    async function loadLeaderboard() {
       if (!contract) return alert("Connect your wallet first!");
 
       const totalPlayers = Number(await contract.getPlayerCount());
@@ -214,7 +215,7 @@
       });
 
       document.getElementById("leaderboard").innerHTML = html;
-    };
+    }
   </script>
 </body>
 </html>
