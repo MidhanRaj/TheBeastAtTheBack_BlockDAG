@@ -2,13 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🏆 BDAG Game Leaderboard</title>
+  <title>BDAG Leaderboard</title>
+
+  <!-- ✅ Load local ethers.js (no CSP issues) -->
+  <script src="ethers.min.js"></script>
 
   <style>
     body {
       background: linear-gradient(135deg, #000428, #004e92);
       color: #fff;
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
       text-align: center;
       margin: 0;
       padding: 0;
@@ -57,28 +60,27 @@
       padding: 10px;
       border-radius: 6px;
       border-left: 4px solid #FFD700;
-      display: flex;
-      justify-content: space-between;
     }
     input {
-      padding: 8px;
-      border-radius: 6px;
+      padding: 10px;
+      border-radius: 5px;
       border: none;
-      margin-top: 10px;
-      text-align: center;
-      font-size: 16px;
+      width: 200px;
+      margin: 10px;
     }
   </style>
 </head>
 <body>
   <h1>🏆 BDAG Game Leaderboard 🏆</h1>
 
+  <!-- ✅ Wallet connect -->
   <button onclick="connectWallet()">🔗 Connect Wallet</button>
   <p id="wallet">Not Connected</p>
 
-  <!-- Username input -->
-  <input type="text" id="usernameInput" placeholder="Enter your username" />
+  <!-- ✅ Username input -->
+  <input type="text" id="username" placeholder="Enter username" />
 
+  <!-- ✅ Submit & View -->
   <button onclick="submitScore()">✅ Submit Score</button>
   <button onclick="loadLeaderboard()">📜 View Leaderboard</button>
 
@@ -87,135 +89,134 @@
     <p>No scores yet...</p>
   </div>
 
-  <!-- ✅ Load self-hosted ethers.js -->
-  <script src="ethers.min.js"></script>
+<script>
+  // ✅ Your deployed contract
+  const contractAddress = "0x7b41e89fd20bec81adbaad81c7e0ee2bd409f402";
+  const contractABI = [
+    {
+      "anonymous": false,
+      "inputs": [
+        { "indexed": true, "internalType": "address", "name": "player", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "score", "type": "uint256" },
+        { "indexed": false, "internalType": "string", "name": "username", "type": "string" }
+      ],
+      "name": "ScoreSubmitted",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "_score", "type": "uint256" },
+        { "internalType": "string", "name": "_username", "type": "string" }
+      ],
+      "name": "submitScore",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getPlayerCount",
+      "outputs": [
+        { "internalType": "uint256", "name": "", "type": "uint256" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        { "internalType": "uint256", "name": "index", "type": "uint256" }
+      ],
+      "name": "getPlayerAt",
+      "outputs": [
+        { "internalType": "address", "name": "", "type": "address" },
+        { "internalType": "uint256", "name": "", "type": "uint256" },
+        { "internalType": "string", "name": "", "type": "string" }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ];
 
-  <script>
-    // ✅ Contract details
-    const contractAddress = "0x7b41e89fd20bec81adbaad81c7e0ee2bd409f402";
-    const contractABI = [
-      {
-        "anonymous": false,
-        "inputs": [
-          { "indexed": true, "internalType": "address", "name": "player", "type": "address" },
-          { "indexed": false, "internalType": "uint256", "name": "score", "type": "uint256" },
-          { "indexed": false, "internalType": "string", "name": "username", "type": "string" }
-        ],
-        "name": "ScoreSubmitted",
-        "type": "event"
-      },
-      {
-        "inputs": [
-          { "internalType": "uint256", "name": "_score", "type": "uint256" },
-          { "internalType": "string", "name": "_username", "type": "string" }
-        ],
-        "name": "submitScore",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-      },
-      {
-        "inputs": [{ "internalType": "uint256", "name": "index", "type": "uint256" }],
-        "name": "getPlayerAt",
-        "outputs": [
-          { "internalType": "address", "name": "", "type": "address" },
-          { "internalType": "uint256", "name": "", "type": "uint256" },
-          { "internalType": "string", "name": "", "type": "string" }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-      },
-      {
-        "inputs": [],
-        "name": "getPlayerCount",
-        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-        "stateMutability": "view",
-        "type": "function"
-      }
-    ];
+  let provider, signer, contract, currentAccount;
 
-    let provider, signer, contract, currentWallet = null;
-    let latestScore = 0;
+  // ✅ Connect MetaMask
+  async function connectWallet() {
+    console.log("🖱 Connect button clicked.");
 
-    // ✅ Read Unity score from URL
+    if (!window.ethereum) {
+      alert("Install MetaMask!");
+      return;
+    }
+
+    try {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      currentAccount = await signer.getAddress();
+
+      document.getElementById("wallet").innerText =
+        "✅ Connected: " + currentAccount;
+
+      contract = new ethers.Contract(contractAddress, contractABI, signer);
+      console.log("✅ MetaMask connected:", currentAccount);
+    } catch (err) {
+      console.error("❌ MetaMask connection failed:", err);
+      alert("MetaMask connection failed!");
+    }
+  }
+
+  // ✅ Get score from URL param (Unity sends ?score=123)
+  function getGameScoreFromURL() {
     const params = new URLSearchParams(window.location.search);
-    if (params.has("score")) {
-      latestScore = parseInt(params.get("score"));
-      console.log("🎮 Player Score from Unity:", latestScore);
+    return parseInt(params.get("score") || "0");
+  }
+
+  // ✅ Submit score
+  async function submitScore() {
+    if (!contract) return alert("Connect wallet first!");
+    const username = document.getElementById("username").value.trim();
+    if (!username) return alert("Enter a username!");
+
+    const score = getGameScoreFromURL(); // Unity auto passes this
+    if (score <= 0) return alert("No valid game score!");
+
+    console.log(`Submitting score ${score} for username ${username}`);
+
+    try {
+      const tx = await contract.submitScore(score, username);
+      alert("✅ Submitted! Tx Hash: " + tx.hash);
+    } catch (err) {
+      console.error("❌ Submit failed:", err);
+      alert("Submit failed!");
+    }
+  }
+
+  // ✅ Load leaderboard
+  async function loadLeaderboard() {
+    if (!contract) return alert("Connect wallet first!");
+
+    const count = await contract.getPlayerCount();
+    let html = "<h2>Leaderboard</h2>";
+
+    let scores = [];
+    for (let i = 0; i < count; i++) {
+      const [addr, score, name] = await contract.getPlayerAt(i);
+      scores.push({ addr, score: parseInt(score), name });
     }
 
-    // ✅ Connect wallet
-    async function connectWallet() {
-      console.log("🖱 Connect button clicked.");
-      if (!window.ethereum) {
-        alert("MetaMask not detected! Please install it.");
-        return;
-      }
-      try {
-        console.log("🔗 Requesting wallet connection...");
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        currentWallet = await signer.getAddress();
+    // Sort descending by score
+    scores.sort((a, b) => b.score - a.score);
 
-        document.getElementById("wallet").innerText = `✅ Connected: ${currentWallet}`;
-        contract = new ethers.Contract(contractAddress, contractABI, signer);
-      } catch (err) {
-        console.error("❌ MetaMask connection failed!", err);
-      }
-    }
+    scores.forEach((entry, idx) => {
+      const rank = idx + 1;
+      html += `<div class="entry">#${rank} | ${entry.name} (${entry.addr.slice(
+        0,
+        6
+      )}...) - <b>${entry.score}</b></div>`;
+    });
 
-    // ✅ Submit score (with username)
-    async function submitScore() {
-      if (!contract) return alert("Connect your wallet first!");
-
-      const username = document.getElementById("usernameInput").value.trim();
-      if (!username) return alert("Enter a username!");
-
-      if (latestScore <= 0) {
-        alert("No valid score received from Unity!");
-        return;
-      }
-
-      try {
-        console.log(`Submitting score: ${latestScore} with username: ${username}`);
-        const tx = await contract.submitScore(latestScore, username);
-        await tx.wait();
-        alert("✅ Score submitted! Tx: " + tx.hash);
-        loadLeaderboard();
-      } catch (err) {
-        console.error("❌ Submit failed!", err);
-      }
-    }
-
-    // ✅ Load leaderboard
-    async function loadLeaderboard() {
-      if (!contract) return alert("Connect your wallet first!");
-
-      const totalPlayers = Number(await contract.getPlayerCount());
-      console.log("📊 Total Players:", totalPlayers);
-
-      let entries = [];
-      for (let i = 0; i < totalPlayers; i++) {
-        const [addr, score, username] = await contract.getPlayerAt(i);
-        entries.push({ addr, score: Number(score), username });
-      }
-
-      // Sort leaderboard: highest score first
-      entries.sort((a, b) => b.score - a.score);
-
-      let html = "<h2>Leaderboard</h2>";
-      entries.forEach((e, index) => {
-        const rank = index + 1;
-        const highlight = (e.addr.toLowerCase() === (currentWallet || "").toLowerCase()) ? "⭐" : "";
-        html += `<div class="entry">
-          <span>#${rank} ${highlight} ${e.username} (${e.addr.slice(0,6)}...)</span>
-          <b>${e.score}</b>
-        </div>`;
-      });
-
-      document.getElementById("leaderboard").innerHTML = html;
-    }
-  </script>
+    document.getElementById("leaderboard").innerHTML = html;
+  }
+</script>
 </body>
 </html>
