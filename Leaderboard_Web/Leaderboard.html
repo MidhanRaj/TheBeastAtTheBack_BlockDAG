@@ -1,57 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>🏆 BDAG Leaderboard</title>
-  <script src="ethers.min.js"></script>
+  <meta charset="UTF-8" />
+  <title>🏆 BDAG Game Leaderboard</title>
+
   <style>
     body {
       background: linear-gradient(135deg, #000428, #004e92);
       color: #fff;
-      font-family: 'Arial', sans-serif;
+      font-family: Arial, sans-serif;
       text-align: center;
+      margin: 0;
+      padding: 0;
     }
     h1 {
       color: #FFD700;
       text-shadow: 2px 2px 8px #ff0000;
+      margin-top: 30px;
     }
     button {
       background: #ff0000;
       color: white;
-      padding: 10px 18px;
+      padding: 12px 20px;
       border: none;
-      margin: 8px;
-      border-radius: 6px;
+      margin: 10px;
+      border-radius: 8px;
       font-size: 18px;
       cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 0 10px #ff0000;
     }
     button:hover {
       background: #FFD700;
       color: black;
+      box-shadow: 0 0 15px #FFD700;
     }
     #wallet {
-      margin: 12px;
-      font-size: 16px;
+      margin: 20px;
+      font-size: 18px;
       color: #00ffff;
     }
     #leaderboard {
-      margin: 20px auto;
+      margin: 30px auto;
       max-width: 500px;
-      background: rgba(0,0,0,0.3);
-      padding: 15px;
+      background: rgba(0,0,0,0.4);
+      padding: 20px;
       border-radius: 10px;
+      box-shadow: 0 0 15px #004e92;
+    }
+    #leaderboard h2 {
+      color: #00ffff;
     }
     .entry {
-      background: rgba(255,255,255,0.08);
-      margin: 6px 0;
+      background: rgba(255,255,255,0.05);
+      margin: 8px 0;
       padding: 10px;
       border-radius: 6px;
-      text-align: left;
+      border-left: 4px solid #FFD700;
+      display: flex;
+      justify-content: space-between;
     }
-    .rank {
-      font-weight: bold;
-      color: #FFD700;
-      margin-right: 10px;
+    input {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      margin-top: 10px;
+      text-align: center;
+      font-size: 16px;
     }
   </style>
 </head>
@@ -61,118 +76,145 @@
   <button onclick="connectWallet()">🔗 Connect Wallet</button>
   <p id="wallet">Not Connected</p>
 
-  <!-- ✅ Hidden score from Unity -->
-  <p id="playerScore"></p>
+  <!-- Username input -->
+  <input type="text" id="usernameInput" placeholder="Enter your username" />
 
-  <!-- ✅ Only username is entered manually -->
-  <input type="text" id="usernameInput" placeholder="Enter your username">
-
-  <button onclick="submitScore()">✅ Submit My Score</button>
+  <button onclick="submitScore()">✅ Submit Score</button>
   <button onclick="loadLeaderboard()">📜 View Leaderboard</button>
 
   <div id="leaderboard">
     <h2>Leaderboard</h2>
-    <p>Loading...</p>
+    <p>No scores yet...</p>
   </div>
 
-<script>
-const contractAddress = "0x7b41e89fd20bec81adbaad81c7e0ee2bd409f402";
-const contractABI = [
-  {
-    "anonymous": false,
-    "inputs": [
-      {"indexed": true,"internalType": "address","name": "player","type": "address"},
-      {"indexed": false,"internalType": "uint256","name": "score","type": "uint256"},
-      {"indexed": false,"internalType": "string","name": "username","type": "string"}
-    ],
-    "name": "ScoreSubmitted","type": "event"
-  },
-  {
-    "inputs": [
-      {"internalType": "uint256","name": "_score","type": "uint256"},
-      {"internalType": "string","name": "_username","type": "string"}
-    ],
-    "name": "submitScore","outputs": [],"stateMutability": "nonpayable","type": "function"
-  },
-  {
-    "inputs": [{"internalType": "uint256","name": "index","type": "uint256"}],
-    "name": "getPlayerAt",
-    "outputs": [
-      {"internalType": "address","name": "","type": "address"},
-      {"internalType": "uint256","name": "","type": "uint256"},
-      {"internalType": "string","name": "","type": "string"}
-    ],
-    "stateMutability": "view","type": "function"
-  },
-  {
-    "inputs": [],"name": "getPlayerCount",
-    "outputs": [{"internalType": "uint256","name": "","type": "uint256"}],
-    "stateMutability": "view","type": "function"
-  }
-];
+  <!-- ✅ CSP-safe ethers.js ESM -->
+  <script type="module">
+    import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.esm.min.js";
 
-let provider, signer, contract, walletAddr;
-let unityScore = 0;
+    // ✅ Contract details
+    const contractAddress = "0x7b41e89fd20bec81adbaad81c7e0ee2bd409f402";
+    const contractABI = [
+      {
+        "anonymous": false,
+        "inputs": [
+          { "indexed": true, "internalType": "address", "name": "player", "type": "address" },
+          { "indexed": false, "internalType": "uint256", "name": "score", "type": "uint256" },
+          { "indexed": false, "internalType": "string", "name": "username", "type": "string" }
+        ],
+        "name": "ScoreSubmitted",
+        "type": "event"
+      },
+      {
+        "inputs": [
+          { "internalType": "uint256", "name": "_score", "type": "uint256" },
+          { "internalType": "string", "name": "_username", "type": "string" }
+        ],
+        "name": "submitScore",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [{ "internalType": "uint256", "name": "index", "type": "uint256" }],
+        "name": "getPlayerAt",
+        "outputs": [
+          { "internalType": "address", "name": "", "type": "address" },
+          { "internalType": "uint256", "name": "", "type": "uint256" },
+          { "internalType": "string", "name": "", "type": "string" }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "getPlayerCount",
+        "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
 
-// ✅ Get ?score= from Unity
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has("score")) {
-  unityScore = parseInt(urlParams.get("score"));
-  document.getElementById("playerScore").innerText = "Your Score: " + unityScore;
-}
+    let provider, signer, contract, currentWallet = null;
+    let latestScore = 0;
 
-async function connectWallet() {
-  console.log("Connect button clicked.");
-  if (!window.ethereum) return alert("Install MetaMask!");
+    // ✅ Read Unity score from URL
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("score")) {
+      latestScore = parseInt(params.get("score"));
+      console.log("🎮 Player Score from Unity:", latestScore);
+    }
 
-  provider = new ethers.BrowserProvider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  signer = await provider.getSigner();
-  walletAddr = await signer.getAddress();
-  document.getElementById("wallet").innerText = "✅ Connected: " + walletAddr;
-  contract = new ethers.Contract(contractAddress, contractABI, signer);
-}
+    // ✅ Connect wallet
+    window.connectWallet = async function() {
+      console.log("🖱 Connect button clicked.");
+      if (!window.ethereum) {
+        alert("MetaMask not detected! Please install it.");
+        return;
+      }
+      try {
+        console.log("🔗 Requesting wallet connection...");
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        currentWallet = await signer.getAddress();
 
-// ✅ Submit score
-async function submitScore() {
-  if (!contract) return alert("Connect wallet first!");
-  const username = document.getElementById("usernameInput").value.trim();
-  if (!username) return alert("Enter username!");
+        document.getElementById("wallet").innerText = `✅ Connected: ${currentWallet}`;
+        contract = new ethers.Contract(contractAddress, contractABI, signer);
+      } catch (err) {
+        console.error("❌ MetaMask connection failed!", err);
+      }
+    };
 
-  const tx = await contract.submitScore(unityScore, username);
-  alert("Score submitted! Tx Hash: " + tx.hash);
-}
+    // ✅ Submit score (with username)
+    window.submitScore = async function() {
+      if (!contract) return alert("Connect your wallet first!");
 
-// ✅ Load & sort leaderboard
-async function loadLeaderboard() {
-  if (!provider) {
-    provider = new ethers.BrowserProvider(window.ethereum);
-    signer = await provider.getSigner();
-    contract = new ethers.Contract(contractAddress, contractABI, provider);
-  }
+      const username = document.getElementById("usernameInput").value.trim();
+      if (!username) return alert("Enter a username!");
 
-  const count = await contract.getPlayerCount();
-  let entries = [];
+      if (latestScore <= 0) {
+        alert("No valid score received from Unity!");
+        return;
+      }
 
-  for (let i = 0; i < count; i++) {
-    const [player, score, username] = await contract.getPlayerAt(i);
-    entries.push({ player, score: parseInt(score), username });
-  }
+      try {
+        console.log(`Submitting score: ${latestScore} with username: ${username}`);
+        const tx = await contract.submitScore(latestScore, username);
+        await tx.wait();
+        alert("✅ Score submitted! Tx: " + tx.hash);
+        loadLeaderboard();
+      } catch (err) {
+        console.error("❌ Submit failed!", err);
+      }
+    };
 
-  // ✅ Sort by highest score
-  entries.sort((a, b) => b.score - a.score);
+    // ✅ Load leaderboard
+    window.loadLeaderboard = async function() {
+      if (!contract) return alert("Connect your wallet first!");
 
-  // ✅ Render with rank numbers
-  let html = "<h2>Leaderboard</h2>";
-  entries.forEach((e, index) => {
-    html += `<div class="entry">
-      <span class="rank">#${index + 1}</span>
-      <b>${e.username || e.player.slice(0,6) + "..."}</b> - ${e.score} pts
-    </div>`;
-  });
+      const totalPlayers = Number(await contract.getPlayerCount());
+      console.log("📊 Total Players:", totalPlayers);
 
-  document.getElementById("leaderboard").innerHTML = html;
-}
-</script>
+      let entries = [];
+      for (let i = 0; i < totalPlayers; i++) {
+        const [addr, score, username] = await contract.getPlayerAt(i);
+        entries.push({ addr, score: Number(score), username });
+      }
+
+      // Sort leaderboard: highest score first
+      entries.sort((a, b) => b.score - a.score);
+
+      let html = "<h2>Leaderboard</h2>";
+      entries.forEach((e, index) => {
+        const rank = index + 1;
+        const highlight = (e.addr.toLowerCase() === (currentWallet || "").toLowerCase()) ? "⭐" : "";
+        html += `<div class="entry">
+          <span>#${rank} ${highlight} ${e.username} (${e.addr.slice(0,6)}...)</span>
+          <b>${e.score}</b>
+        </div>`;
+      });
+
+      document.getElementById("leaderboard").innerHTML = html;
+    };
+  </script>
 </body>
 </html>
