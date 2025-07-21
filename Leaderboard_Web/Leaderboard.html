@@ -3,10 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>BDAG Leaderboard</title>
-
-  <!-- ✅ Load ethers.js from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-
   <style>
     body {
       background: linear-gradient(135deg, #000428, #004e92);
@@ -37,6 +34,13 @@
       background: #FFD700;
       color: black;
       box-shadow: 0 0 15px #FFD700;
+    }
+    input {
+      padding: 10px;
+      margin: 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 16px;
     }
     #wallet {
       margin: 20px;
@@ -69,6 +73,9 @@
   <button onclick="connectWallet()">🔗 Connect Wallet</button>
   <p id="wallet">Not Connected</p>
 
+  <!-- ✅ Username input -->
+  <input type="text" id="username" placeholder="Enter your username">
+
   <button onclick="submitScore()">✅ Submit Score</button>
   <button onclick="loadLeaderboard()">📜 View Leaderboard</button>
 
@@ -78,93 +85,117 @@
   </div>
 
 <script>
-/* ✅ Replace with your deployed smart contract details */
-const contractAddress = "0xd89538fc30ce658e43225f90a39629dcdccc587f";
-const contractABI = [
-  {
-    "anonymous": false,
-    "inputs": [
-      { "indexed": true, "internalType": "address", "name": "player", "type": "address" },
-      { "indexed": false, "internalType": "uint256", "name": "score", "type": "uint256" }
-    ],
-    "name": "ScoreSubmitted",
-    "type": "event"
-  },
-  {
-    "inputs": [{ "internalType": "uint256", "name": "_score", "type": "uint256" }],
-    "name": "submitScore",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{ "internalType": "uint256", "name": "index", "type": "uint256" }],
-    "name": "getScore",
-    "outputs": [
-      { "internalType": "address", "name": "player", "type": "address" },
-      { "internalType": "uint256", "name": "value", "type": "uint256" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getScoreCount",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
+  console.log("✅ Script Loaded");
 
-let provider, signer, contract;
-
-// ✅ Connect wallet
-async function connectWallet() {
-  console.log("🖱 Connect button clicked.");
-  if (!window.ethereum) {
-    alert("MetaMask is required!");
-    return;
-  }
-  try {
-    console.log("🔗 Requesting wallet connection...");
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    const accounts = await provider.send("eth_requestAccounts", []);
-    console.log("✅ Accounts returned: ", accounts);
-    signer = provider.getSigner();
-    const addr = await signer.getAddress();
-    document.getElementById("wallet").innerText = "✅ Connected: " + addr;
-    contract = new ethers.Contract(contractAddress, contractABI, signer);
-  } catch (err) {
-    console.error("❌ MetaMask connection failed!", err);
-  }
-}
-
-// ✅ Submit a test score
-async function submitScore() {
-  if (!contract) return alert("⚠️ Connect wallet first!");
-  try {
-    const tx = await contract.submitScore(123); // Replace 123 with real score later
-    alert("✅ Score submitted! Tx Hash: " + tx.hash);
-  } catch (err) {
-    console.error("❌ Submit failed", err);
-  }
-}
-
-// ✅ Load leaderboard
-async function loadLeaderboard() {
-  if (!contract) return alert("⚠️ Connect wallet first!");
-  try {
-    const count = await contract.getScoreCount();
-    let html = "<h2>Leaderboard</h2>";
-    for (let i = 0; i < count; i++) {
-      const entry = await contract.getScore(i);
-      html += `<div class="entry">${entry.player.slice(0,6)}... - <b>${entry.value}</b></div>`;
+  // ✅ Contract details
+  const contractAddress = "0x461d284720a937bd7316bcc321f048fe44719ab5";
+  const contractABI = [
+    {
+      "anonymous": false,
+      "inputs": [
+        {"indexed": true, "internalType": "address", "name": "player", "type": "address"},
+        {"indexed": false, "internalType": "uint256", "name": "score", "type": "uint256"},
+        {"indexed": false, "internalType": "string", "name": "username", "type": "string"}
+      ],
+      "name": "ScoreSubmitted",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {"internalType": "uint256", "name": "_score", "type": "uint256"},
+        {"internalType": "string", "name": "_username", "type": "string"}
+      ],
+      "name": "submitScore",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [{"internalType": "uint256", "name": "index", "type": "uint256"}],
+      "name": "getScore",
+      "outputs": [
+        {"internalType": "address", "name": "player", "type": "address"},
+        {"internalType": "uint256", "name": "value", "type": "uint256"},
+        {"internalType": "string", "name": "username", "type": "string"}
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getScoreCount",
+      "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+      "stateMutability": "view",
+      "type": "function"
     }
-    document.getElementById("leaderboard").innerHTML = html;
-  } catch (err) {
-    console.error("❌ Failed to load leaderboard", err);
+  ];
+
+  let provider, signer, contract;
+
+  // ✅ Connect MetaMask
+  async function connectWallet() {
+    console.log("🖱 Connect button clicked.");
+    if (!window.ethereum) {
+      alert("Please install MetaMask!");
+      return;
+    }
+
+    try {
+      console.log("🔗 Requesting wallet connection...");
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = provider.getSigner();
+      const addr = await signer.getAddress();
+
+      document.getElementById("wallet").innerText = "✅ Connected: " + addr;
+      console.log("✅ Accounts returned:", addr);
+
+      // Initialize contract
+      contract = new ethers.Contract(contractAddress, contractABI, signer);
+
+    } catch (err) {
+      console.error("❌ MetaMask connection failed!", err);
+    }
   }
-}
+
+  // ✅ Submit score + username
+  async function submitScore() {
+    if (!contract) return alert("Connect wallet first!");
+
+    const username = document.getElementById("username").value.trim();
+    if (!username) return alert("Please enter a username!");
+
+    const score = Math.floor(Math.random() * 500); // EXAMPLE random score for now
+
+    try {
+      console.log("📝 Submitting score:", score, "username:", username);
+      const tx = await contract.submitScore(score, username);
+      alert("Submitted! Tx Hash: " + tx.hash);
+    } catch (err) {
+      console.error("❌ Submit failed:", err);
+    }
+  }
+
+  // ✅ Load leaderboard
+  async function loadLeaderboard() {
+    if (!contract) return alert("Connect wallet first!");
+    try {
+      const count = await contract.getScoreCount();
+      let html = "<h2>Leaderboard</h2>";
+
+      for (let i = 0; i < count; i++) {
+        const entry = await contract.getScore(i);
+        const shortAddr = entry.player.slice(0, 6) + "...";
+        html += `<div class="entry">
+                  <b>${entry.username}</b> (${shortAddr}) - <span>${entry.value} pts</span>
+                 </div>`;
+      }
+
+      document.getElementById("leaderboard").innerHTML = html;
+    } catch (err) {
+      console.error("❌ Failed to load leaderboard:", err);
+    }
+  }
 </script>
 </body>
 </html>
