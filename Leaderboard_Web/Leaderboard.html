@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <title>BDAG Leaderboard</title>
 
-  <!-- ✅ Load local ethers.js -->
-  <script src="ethers.min.js"></script>
+  <!-- ✅ Load ethers.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
   <style>
     body {
@@ -17,12 +17,12 @@
       padding: 0;
     }
     h1 {
-      color: #FFD700; /* Yellow */
-      text-shadow: 2px 2px 8px #ff0000; /* Red glow */
+      color: #FFD700;
+      text-shadow: 2px 2px 8px #ff0000;
       margin-top: 30px;
     }
     button {
-      background: #ff0000; /* Red */
+      background: #ff0000;
       color: white;
       padding: 12px 20px;
       border: none;
@@ -34,14 +34,14 @@
       box-shadow: 0 0 10px #ff0000;
     }
     button:hover {
-      background: #FFD700; /* Yellow */
+      background: #FFD700;
       color: black;
       box-shadow: 0 0 15px #FFD700;
     }
     #wallet {
       margin: 20px;
       font-size: 18px;
-      color: #00ffff; /* Cyan text */
+      color: #00ffff;
     }
     #leaderboard {
       margin: 30px auto;
@@ -139,11 +139,11 @@ async function connectWallet() {
   }
 }
 
-// ✅ Submit a test score (change number later)
+// ✅ Submit a test score
 async function submitScore() {
   if (!contract) return alert("⚠️ Connect wallet first!");
   try {
-    const tx = await contract.submitScore(123); // Example
+    const tx = await contract.submitScore(123); // Replace 123 with real score later
     alert("✅ Score submitted! Tx Hash: " + tx.hash);
   } catch (err) {
     console.error("❌ Submit failed", err);
