@@ -5,7 +5,6 @@
   <title>BDAG Leaderboard</title>
   <!-- ✅ Load ethers.js first -->
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-
   <style>
     body {
       background: linear-gradient(135deg, #000428, #004e92);
@@ -15,13 +14,9 @@
       margin: 0;
       padding: 0;
     }
-    h1 {
-      color: #FFD700; /* Yellow */
-      text-shadow: 2px 2px 8px #ff0000; /* Red glow */
-      margin-top: 30px;
-    }
+    h1 { color: #FFD700; text-shadow: 2px 2px 8px #ff0000; margin-top: 30px; }
     button {
-      background: #ff0000; /* Red */
+      background: #ff0000;
       color: white;
       padding: 12px 20px;
       border: none;
@@ -32,40 +27,25 @@
       transition: 0.3s;
       box-shadow: 0 0 10px #ff0000;
     }
-    button:hover {
-      background: #FFD700; /* Yellow */
-      color: black;
-      box-shadow: 0 0 15px #FFD700;
-    }
-    #wallet {
-      margin: 20px;
-      font-size: 18px;
-      color: #00ffff; /* Cyan text */
-    }
+    button:hover { background: #FFD700; color: black; box-shadow: 0 0 15px #FFD700; }
+    #wallet { margin: 20px; font-size: 18px; color: #00ffff; }
     #leaderboard {
-      margin: 30px auto;
-      max-width: 500px;
-      background: rgba(0,0,0,0.4);
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px #004e92;
+      margin: 30px auto; max-width: 500px;
+      background: rgba(0,0,0,0.4); padding: 20px;
+      border-radius: 10px; box-shadow: 0 0 15px #004e92;
     }
-    #leaderboard h2 {
-      color: #00ffff;
-    }
+    #leaderboard h2 { color: #00ffff; }
     .entry {
       background: rgba(255,255,255,0.05);
-      margin: 8px 0;
-      padding: 10px;
-      border-radius: 6px;
-      border-left: 4px solid #FFD700;
+      margin: 8px 0; padding: 10px;
+      border-radius: 6px; border-left: 4px solid #FFD700;
     }
   </style>
 </head>
 <body>
   <h1>🏆 BDAG Game Leaderboard 🏆</h1>
-  
-  <button onclick="connectWallet()">🔗 Connect Wallet</button>
+
+  <button id="connectBtn" disabled>⏳ Loading Ethers...</button>
   <p id="wallet">Not Connected</p>
 
   <button onclick="submitScore()">✅ Submit Score</button>
@@ -77,14 +57,7 @@
   </div>
 
 <script>
-console.log("✅ Page loaded");
-
-// ✅ Check ethers is available
-if (typeof ethers !== "undefined") {
-  console.log("✅ Ethers.js version:", ethers.version);
-} else {
-  console.error("❌ Ethers.js NOT loaded!");
-}
+console.log("✅ Page loaded, waiting for ethers.js...");
 
 // ✅ Replace with your deployed contract
 const contractAddress = "0xd89538fc30ce658e43225f90a39629dcdccc587f";
@@ -126,7 +99,20 @@ const contractABI = [
 
 let provider, signer, contract;
 
-// ✅ Improved MetaMask connection with mobile fallback
+// ✅ Enable connect button only after ethers is ready
+window.addEventListener("load", () => {
+  const connectBtn = document.getElementById("connectBtn");
+  if (typeof ethers !== "undefined") {
+    console.log("✅ Ethers.js loaded:", ethers.version);
+    connectBtn.textContent = "🔗 Connect Wallet";
+    connectBtn.disabled = false;
+    connectBtn.onclick = connectWallet;
+  } else {
+    console.error("❌ Ethers.js NOT loaded!");
+    connectBtn.textContent = "❌ Ethers.js Failed to Load";
+  }
+});
+
 async function connectWallet() {
   console.log("🖱 Connect button clicked.");
 
@@ -163,7 +149,7 @@ async function connectWallet() {
 async function submitScore() {
   if (!contract) return alert("⚠️ Connect wallet first!");
   try {
-    const tx = await contract.submitScore(123); // Example score
+    const tx = await contract.submitScore(123);
     console.log("✅ Submitting score TX:", tx.hash);
     alert("✅ Submitted! Tx Hash: " + tx.hash);
   } catch (err) {
