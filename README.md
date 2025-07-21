@@ -1,65 +1,66 @@
-# The Beast at the Back – BlockDAG Hackathon
+# 🐺 The Beast at the Back – BlockDAG Hackathon  
 
-An **endless runner horror game** with a **cartoony aesthetic** where a mysterious beast chases you endlessly.  
-Avoid obstacles, survive as long as possible, and **submit your high scores on-chain** to the BlockDAG Primordial Testnet!
+An endless runner game with a dark, cartoony aesthetic. You’re being chased by **The Beast** through a nightmare world. Jump over rocks, dodge traps, and survive as long as you can. When you’re caught, your **score is recorded on-chain** using BlockDAG smart contracts!  
 
----
-
-## 🎮 How to Play
-
-- **PC/Mobile Controls**  
-  - Tap / Spacebar → **Jump**  
-  - Avoid **rocks & traps**  
-  - Survive as long as you can!
-
-- **If you hit an obstacle or get caught by the beast → Game Over**
-  - A **jumpscare** will appear 😱  
-  - Your score is shown on the Game Over screen  
-
-- After Game Over → You’ll be redirected to the **Leaderboard Page**  
-  - Connect **MetaMask**  
-  - Enter your **username**  
-  - Submit your **score to the blockchain**  
+🎮 **Play now:** [Live WebGL Build](https://midhanraj.github.io/TheBeastAtTheBack_BlockDAG/WebGL_Build/)  
+📜 **Leaderboard:** [View On-Chain Leaderboard](https://midhanraj.github.io/TheBeastAtTheBack_BlockDAG/Leaderboard_Web/Leaderboard.html)  
 
 ---
 
-## 🌐 Play Online  
-
-- **WebGL Build Link** (hosted version):  
-  [Play on GitHub Pages](https://midhanraj.github.io/TheBeastAtTheBack_BlockDAG/WebGL_Build/)  
-
-- **Leaderboard & Wallet Connect Page**:  
-  [View Leaderboard](https://midhanraj.github.io/TheBeastAtTheBack_BlockDAG/Leaderboard_Web/Leaderboard.html)  
-
----
-
-## ✨ Features  
-
-✅ Endless Runner gameplay with cartoony horror style  
-✅ **Touch & keyboard controls** for mobile & desktop  
-✅ **On-chain leaderboard** using BDAG smart contracts  
-✅ MetaMask wallet integration  
-✅ **Highest score logic** → only your **best score** is stored  
-✅ Jumpscare screen when you lose  
+## 🌟 Features  
+✅ Endless horror runner with smooth keyboard/touch controls  
+✅ On-chain **leaderboard** stored on BlockDAG’s Primordial Testnet  
+✅ **MetaMask wallet integration** for score submission  
+✅ Highscores are saved **only if they beat your previous record**  
+✅ Jumpscare when you lose 😱  
+✅ Cartoony but eerie dark aesthetic  
 
 ---
 
-## 📜 Smart Contract  
+## 🕹 How to Play  
+
+1. **Press Space or Tap** to jump.  
+2. **Avoid rocks and traps** to keep running.  
+3. The Beast keeps getting closer… don’t get caught!  
+4. When you die, your score is automatically sent to the **Leaderboard** page.  
+5. Connect your wallet → submit your best score → see yourself ranked!  
+
+---
+
+## 📂 Repo Structure  
+
+TheBeastAtTheBack_BlockDAG/
+│
+├── WebGL_Build/ # Unity WebGL build for the game
+│ ├── index.html
+│ ├── Build/
+│ └── TemplateData/
+│
+├── Leaderboard_Web/ # HTML + JS for wallet connect & leaderboard
+│ └── Leaderboard.html
+│
+├── LICENSE # MIT License
+├── README.md # You are reading this
+└── index.html # Entry page for GitHub Pages
+
+yaml
+Copy
+Edit
+
+---
+
+## 🔗 Smart Contract  
 
 - **Network:** BlockDAG Primordial Testnet  
 - **Contract Address:** `0x7b41e89fd20bec81adbaad81c7e0ee2bd409f402`  
 - **Features:**  
-  - One entry per player  
-  - Updates **only if new score is higher than previous**  
-  - Stores `address + username + highestScore`  
+  - Saves your **best score + username**  
+  - Prevents duplicates unless you beat your previous highscore  
 
 ---
 
-## 🛠️ Installation  
+## 🚀 Setup for Developers  
 
-To run locally:  
-
-```bash
-git clone https://github.com/MidhanRaj/TheBeastAtTheBack_BlockDAG.git
-cd TheBeastAtTheBack_BlockDAG/WebGL_Build
-open index.html
+1. Clone the repo:  
+   ```bash
+   git clone https://github.com/MidhanRaj/TheBeastAtTheBack_BlockDAG.git
