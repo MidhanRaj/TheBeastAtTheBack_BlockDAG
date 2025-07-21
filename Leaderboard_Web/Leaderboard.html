@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>BDAG Leaderboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script src="ethers.min.js"></script>
   <style>
     body {
       background: linear-gradient(135deg, #000428, #004e92);
@@ -16,16 +16,16 @@
     h1 {
       color: #FFD700;
       text-shadow: 2px 2px 8px #ff0000;
-      margin-top: 30px;
+      margin-top: 20px;
     }
     button {
       background: #ff0000;
       color: white;
-      padding: 12px 20px;
+      padding: 10px 16px;
       border: none;
       margin: 10px;
       border-radius: 8px;
-      font-size: 18px;
+      font-size: 16px;
       cursor: pointer;
       transition: 0.3s;
       box-shadow: 0 0 10px #ff0000;
@@ -35,20 +35,20 @@
       color: black;
       box-shadow: 0 0 15px #FFD700;
     }
-    input {
-      padding: 10px;
-      margin: 10px;
-      border-radius: 6px;
-      border: none;
-      font-size: 16px;
-    }
     #wallet {
-      margin: 20px;
-      font-size: 18px;
+      margin: 10px;
+      font-size: 16px;
       color: #00ffff;
     }
+    input {
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      margin: 10px;
+      font-size: 16px;
+    }
     #leaderboard {
-      margin: 30px auto;
+      margin: 20px auto;
       max-width: 500px;
       background: rgba(0,0,0,0.4);
       padding: 20px;
@@ -69,12 +69,14 @@
 </head>
 <body>
   <h1>🏆 BDAG Game Leaderboard 🏆</h1>
-  
+
   <button onclick="connectWallet()">🔗 Connect Wallet</button>
   <p id="wallet">Not Connected</p>
 
-  <!-- ✅ Username input -->
-  <input type="text" id="username" placeholder="Enter your username">
+  <div>
+    <input type="text" id="username" placeholder="Enter your username">
+    <input type="number" id="score" placeholder="Score from game">
+  </div>
 
   <button onclick="submitScore()">✅ Submit Score</button>
   <button onclick="loadLeaderboard()">📜 View Leaderboard</button>
@@ -85,25 +87,22 @@
   </div>
 
 <script>
-  console.log("✅ Script Loaded");
-
-  // ✅ Contract details
-  const contractAddress = "0x461d284720a937bd7316bcc321f048fe44719ab5";
+  const contractAddress = "0x7b41e89fd20bec81adbaad81c7e0ee2bd409f402";
   const contractABI = [
     {
       "anonymous": false,
       "inputs": [
-        {"indexed": true, "internalType": "address", "name": "player", "type": "address"},
-        {"indexed": false, "internalType": "uint256", "name": "score", "type": "uint256"},
-        {"indexed": false, "internalType": "string", "name": "username", "type": "string"}
+        { "indexed": true, "internalType": "address", "name": "player", "type": "address" },
+        { "indexed": false, "internalType": "uint256", "name": "score", "type": "uint256" },
+        { "indexed": false, "internalType": "string", "name": "username", "type": "string" }
       ],
       "name": "ScoreSubmitted",
       "type": "event"
     },
     {
       "inputs": [
-        {"internalType": "uint256", "name": "_score", "type": "uint256"},
-        {"internalType": "string", "name": "_username", "type": "string"}
+        { "internalType": "uint256", "name": "_score", "type": "uint256" },
+        { "internalType": "string", "name": "_username", "type": "string" }
       ],
       "name": "submitScore",
       "outputs": [],
@@ -111,20 +110,20 @@
       "type": "function"
     },
     {
-      "inputs": [{"internalType": "uint256", "name": "index", "type": "uint256"}],
-      "name": "getScore",
+      "inputs": [{ "internalType": "uint256", "name": "index", "type": "uint256" }],
+      "name": "getPlayerAt",
       "outputs": [
-        {"internalType": "address", "name": "player", "type": "address"},
-        {"internalType": "uint256", "name": "value", "type": "uint256"},
-        {"internalType": "string", "name": "username", "type": "string"}
+        { "internalType": "address", "name": "", "type": "address" },
+        { "internalType": "uint256", "name": "", "type": "uint256" },
+        { "internalType": "string", "name": "", "type": "string" }
       ],
       "stateMutability": "view",
       "type": "function"
     },
     {
       "inputs": [],
-      "name": "getScoreCount",
-      "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+      "name": "getPlayerCount",
+      "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
       "stateMutability": "view",
       "type": "function"
     }
@@ -132,70 +131,93 @@
 
   let provider, signer, contract;
 
-  // ✅ Connect MetaMask
-  async function connectWallet() {
-    console.log("🖱 Connect button clicked.");
-    if (!window.ethereum) {
-      alert("Please install MetaMask!");
-      return;
+  // ✅ Get ?score=XXX from Unity link
+  function autoFillScoreFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const scoreParam = params.get("score");
+    if (scoreParam) {
+      document.getElementById("score").value = scoreParam;
+      console.log("✅ Score auto-filled from Unity:", scoreParam);
     }
+  }
 
+  // ✅ Connect wallet
+  async function connectWallet() {
     try {
-      console.log("🔗 Requesting wallet connection...");
+      if (!window.ethereum) return alert("Install MetaMask!");
+
+      console.log("🖱 Connect button clicked.");
       provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
       signer = provider.getSigner();
-      const addr = await signer.getAddress();
 
+      const addr = await signer.getAddress();
       document.getElementById("wallet").innerText = "✅ Connected: " + addr;
       console.log("✅ Accounts returned:", addr);
 
-      // Initialize contract
       contract = new ethers.Contract(contractAddress, contractABI, signer);
 
     } catch (err) {
       console.error("❌ MetaMask connection failed!", err);
+      alert("❌ Wallet connection failed! Check console for details.");
     }
   }
 
-  // ✅ Submit score + username
+  // ✅ Submit score with username
   async function submitScore() {
     if (!contract) return alert("Connect wallet first!");
 
     const username = document.getElementById("username").value.trim();
-    if (!username) return alert("Please enter a username!");
+    const score = document.getElementById("score").value.trim();
 
-    const score = Math.floor(Math.random() * 500); // EXAMPLE random score for now
+    if (!username) return alert("Enter a username!");
+    if (!score || isNaN(score)) return alert("Invalid score!");
 
     try {
-      console.log("📝 Submitting score:", score, "username:", username);
       const tx = await contract.submitScore(score, username);
-      alert("Submitted! Tx Hash: " + tx.hash);
+      alert("⏳ Submitting score... Tx: " + tx.hash);
+      await tx.wait();
+      alert("✅ Score submitted!");
+      loadLeaderboard(); 
     } catch (err) {
       console.error("❌ Submit failed:", err);
+      alert("Submit failed. Check console for details.");
     }
   }
 
   // ✅ Load leaderboard
   async function loadLeaderboard() {
     if (!contract) return alert("Connect wallet first!");
+
     try {
-      const count = await contract.getScoreCount();
+      const count = await contract.getPlayerCount();
       let html = "<h2>Leaderboard</h2>";
 
+      let connectedWallet = signer ? (await signer.getAddress()).toLowerCase() : null;
+
       for (let i = 0; i < count; i++) {
-        const entry = await contract.getScore(i);
-        const shortAddr = entry.player.slice(0, 6) + "...";
-        html += `<div class="entry">
-                  <b>${entry.username}</b> (${shortAddr}) - <span>${entry.value} pts</span>
-                 </div>`;
+        const entry = await contract.getPlayerAt(i);
+        const wallet = entry[0];
+        const score = entry[1];
+        const username = entry[2];
+
+        const highlight = connectedWallet && wallet.toLowerCase() === connectedWallet ? 
+                          "style='color:yellow;font-weight:bold;'" : "";
+
+        html += `<div class="entry" ${highlight}>
+          🏅 <b>${username}</b> (${wallet.slice(0,6)}...) - <span>${score} pts</span>
+        </div>`;
       }
 
       document.getElementById("leaderboard").innerHTML = html;
     } catch (err) {
       console.error("❌ Failed to load leaderboard:", err);
+      alert("Failed to load leaderboard. See console.");
     }
   }
+
+  // ✅ Auto-fill score if coming from Unity
+  window.onload = autoFillScoreFromURL;
 </script>
 </body>
 </html>
