@@ -1,4 +1,4 @@
-# 🐺 The Beast at the Back – BlockDAG Hackathon
+# 🐺 The Beast at the Back – BlockDAG
 
 An endless horror runner where you’re being chased by **The Beast** through a dark, cartoony nightmare. Jump, dodge, survive, and **prove your skill on-chain!**
 
